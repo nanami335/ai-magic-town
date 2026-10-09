@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>流光鎮物語：AI 魔法見習師</title>
+  <meta name="theme-color" content="#4d3b7a" />
+  <meta name="description" content="可公開分享的手機網頁遊戲｜2D像素風 RPG｜AI 魔法見習師" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root{
+      --bg:#1d1731;
+      --panel:#2a2142;
+      --panel2:#3b2f5c;
+      --accent:#8f7cff;
+      --accent2:#f0b94f;
+      --hp:#ff6b8a;
+      --mp:#69c9ff;
+      --ok:#8be28b;
+      --text:#f7f3ff;
+      --muted:#c9c1e8;
+      --danger:#ff786f;
+      --tile:44px;
+      --shadow:0 8px 20px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+    html,body{margin:0; background:linear-gradient(#181228,#271f42); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; height:100%; overflow:hidden;}
+    body{display:flex; justify-content:center;}
+    .app{width:100%; max-width:440px; height:100dvh; display:flex; flex-direction:column; background:var(--bg); position:relative; overflow:hidden;}
+    .header{padding:10px 14px 8px; background:linear-gradient(180deg,#3f2d68,#281f42); box-shadow:var(--shadow); z-index:5;}
+    .title{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+    .title h1{font-size:18px; margin:0; line-height:1.2}
+    .subtitle{font-size:11px; color:var(--muted); margin-top:2px}
+    .badge{font-size:11px; padding:5px 8px; border-radius:999px; background:#594688; color:#fff; white-space:nowrap;}
+    .stats{display:grid; grid-template-columns: repeat(4,1fr); gap:8px; margin-top:8px;}
+    .stat{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:8px; text-align:center;}
+    .stat .k{font-size:10px; color:var(--muted)}
+    .stat .v{font-size:14px; font-weight:800; margin-top:2px}
+    .screen{flex:1; overflow:auto; padding:12px; padding-bottom:120px;}
+    .card{background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:12px; box-shadow:var(--shadow);}
+    .card + .card{margin-top:10px}
+    .section-title{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;}
+    .section-title strong{font-size:14px}
+    .hint{font-size:11px; color:var(--muted)}
+    .map-wrap{display:flex; justify-content:center;}
+    .map{display:grid; grid-template-columns: repeat(7,var(--tile)); gap:3px; margin:4px auto 0;}
+    .tile{width:var(--tile); height:var(--tile); border:none; border-radius:10px; position:relative; color:#fff; font-size:20px; display:flex; align-items:center; justify-content:center;}
+    .grass{background:#538354}
+    .grass2{background:#4b754c}
+    .path{background:#b49769}
+    .water{background:#4e7fb2}
+    .house{background:#865b4b}
+    .special{outline:2px solid rgba(255,255,255,.2)}
+    .hero{position:absolute; bottom:2px; right:2px; font-size:18px; filter:drop-shadow(0 1px 1px rgba(0,0,0,.5));}
+    .done{box-shadow: inset 0 0 0 2px var(--ok)}
+    .location{font-size:13px; color:var(--muted); margin-top:8px; text-align:center;}
+    .dialog{min-height:145px; white-space:pre-wrap; line-height:1.55; font-size:14px;}
+    .speaker{font-weight:800; margin-bottom:6px; color:#ffe9a6;}
+    .choices{display:grid; gap:8px; margin-top:10px;}
+    button.action, .nav-btn, .small-btn{
+      border:none; border-radius:12px; background:var(--panel2); color:#fff; padding:12px; font-size:14px; font-weight:700; box-shadow:var(--shadow);
+    }
+    button.action.secondary, .small-btn{background:#4a3a74}
+    button.action.ghost{background:rgba(255,255,255,.08)}
+    button.action:disabled{opacity:.45}
+    .row{display:flex; gap:8px;}
+    .row > *{flex:1}
+    .quest{display:flex; gap:8px; align-items:flex-start; background:rgba(255,255,255,.05); border-radius:12px; padding:10px;}
+    .quest .icon{font-size:20px}
+    .quest .name{font-weight:800; font-size:13px}
+    .quest .desc{font-size:12px; color:var(--muted); margin-top:2px}
+    .tag{display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.08); margin:2px 6px 0 0;}
+    .team{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+    .mate{background:rgba(255,255,255,.06); border-radius:12px; padding:10px; min-height:88px;}
+    .mate .name{font-weight:800; font-size:13px}
+    .mate .mini{font-size:12px; color:var(--muted); margin-top:4px}
+    .bottom-nav{position:absolute; bottom:0; left:0; right:0; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(180deg,rgba(29,23,49,0),rgba(29,23,49,.85) 18%, rgba(29,23,49,1)); display:flex; gap:8px; z-index:6}
+    .nav-btn{padding:12px 10px; font-size:12px}
+    .controls{position:absolute; left:12px; bottom:84px; width:120px; height:120px; z-index:8;}
+    .dpad-btn{position:absolute; width:40px; height:40px; border:none; border-radius:12px; background:rgba(255,255,255,.12); color:#fff; font-weight:900; font-size:18px; backdrop-filter: blur(2px);}
+    .dpad-btn.up{left:40px; top:0}
+    .dpad-btn.down{left:40px; bottom:0}
+    .dpad-btn.left{left:0; top:40px}
+    .dpad-btn.right{right:0; top:40px}
+    .dpad-btn.mid{left:40px; top:40px; font-size:11px}
+    .toast{position:absolute; left:50%; transform:translateX(-50%); bottom:160px; background:rgba(12,8,20,.95); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:10px 12px; font-size:12px; max-width:86%; text-align:center; box-shadow:var(--shadow); display:none; z-index:20}
+    .battle-screen .enemy-box, .battle-screen .player-box{background:rgba(255,255,255,.05); border-radius:14px; padding:10px;}
+    .battle-arena{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; text-align:center;}
+    .sprite{font-size:44px}
+    .bar{height:10px; background:rgba(255,255,255,.12); border-radius:999px; overflow:hidden;}
+    .bar > span{display:block; height:100%; border-radius:999px;}
+    .battle-log{background:rgba(0,0,0,.15); border-radius:12px; padding:10px; font-size:13px; line-height:1.5; white-space:pre-wrap; min-height:100px; margin-top:10px;}
+    .spell-list{display:grid; gap:8px; margin-top:10px}
+    .spell{padding:12px; background:rgba(255,255,255,.07); border-radius:12px; border:none; color:#fff; text-align:left; font-size:14px; font-weight:700}
+    .spell small{display:block; color:var(--muted); font-weight:600; margin-top:4px; line-height:1.4}
+    .footer-note{font-size:11px; color:var(--muted); text-align:center; margin-top:8px}
+    .hidden{display:none !important}
+    .install{font-size:11px; color:#fff; margin-top:6px; background:rgba(255,255,255,.08); padding:8px 10px; border-radius:12px;}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="title">
+        <div>
+          <h1>《流光鎮物語：AI 魔法見習師》</h1>
+          <div class="subtitle">2D 像素風 RPG｜手機網頁遊戲第一版</div>
+        </div>
+        <div class="badge" id="chapterBadge">序章</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">等級</div><div class="v" id="lvText">Lv.1</div></div>
+        <div class="stat"><div class="k">EXP</div><div class="v" id="expText">0/30</div></div>
+        <div class="stat"><div class="k">魔晶</div><div class="v" id="coinText">0</div></div>
+        <div class="stat"><div class="k">認證碎片</div><div class="v" id="certText">0/3</div></div>
+      </div>
+      <div id="installNote" class="install hidden">可加入手機主畫面：瀏覽器選單 →「加入主畫面」即可更像 App。</div>
+    </div>
+
+    <div class="screen" id="screenExplore">
+      <div class="card">
+        <div class="section-title"><strong>🗺️ 流光鎮地圖</strong><span class="hint">走到圖示地點後按「互動」</span></div>
+        <div class="map-wrap"><div id="map" class="map"></div></div>
+        <div class="location" id="locationText">你站在中央廣場。</div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><strong>📜 劇情 / 任務</strong><span class="hint" id="progressHint">完成三個學派試煉後就能挑戰小考 BOSS</span></div>
+        <div class="dialog"><div class="speaker" id="speaker">校長・露米雅</div><div id="dialogue">歡迎你，AI 魔法見習師。你要在流光鎮學會三系魔法：感知、聯結、智慧。每學成一系，便會取得一枚認證碎片。集滿後，你就能挑戰「小考魔像」，取得初級魔法師認證。</div></div>
+        <div class="choices" id="choices"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><strong>🧾 任務列表</strong><span class="hint" id="questCount">0 / 5 完成</span></div>
+        <div id="questList"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><strong>🤝 隊友</strong><span class="hint">特殊任務會結交隊友</span></div>
+        <div class="team" id="teamList"></div>
+      </div>
+
+      <div class="footer-note">此版本可直接公開分享，只要把整個資料夾上傳到 GitHub Pages / Netlify / Cloudflare Pages 即可。</div>
+    </div>
+
+    <div class="screen hidden" id="screenBattle">
+      <div class="card battle-screen">
+        <div class="section-title"><strong>⚔️ 回合制魔法戰鬥</strong><span class="hint" id="battleTurn">你的回合</span></div>
+        <div class="battle-arena">
+          <div class="player-box">
+            <div class="name" style="font-weight:800;">你・AI 魔法見習師</div>
+            <div class="sprite">🧙‍♀️</div>
+            <div class="bar"><span id="playerHpBar" style="width:100%; background:var(--hp)"></span></div>
+            <div class="hint" id="playerHpText">HP 100 / 100</div>
+            <div class="bar" style="margin-top:6px"><span id="playerMpBar" style="width:100%; background:var(--mp)"></span></div>
+            <div class="hint" id="playerMpText">MP 30 / 30</div>
+          </div>
+          <div class="enemy-box">
+            <div class="name" id="enemyName" style="font-weight:800;">小考魔像</div>
+            <div class="sprite" id="enemySprite">🗿</div>
+            <div class="bar"><span id="enemyHpBar" style="width:100%; background:var(--hp)"></span></div>
+            <div class="hint" id="enemyHpText">HP 100 / 100</div>
+            <div class="hint" id="enemyDesc">答對題目即可施放剋制魔法。</div>
+          </div>
+        </div>
+        <div class="battle-log" id="battleLog">戰鬥開始！
+用正確的魔法知識擊破敵人吧。</div>
+        <div class="spell-list" id="spellList"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="action ghost" id="battleBackBtn">離開戰鬥</button>
+          <button class="action secondary" id="battleNextBtn">查看題目</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls" id="controls">
+      <button class="dpad-btn up" data-move="up">▲</button>
+      <button class="dpad-btn left" data-move="left">◀</button>
+      <button class="dpad-btn mid" id="interactBtn">互動</button>
+      <button class="dpad-btn right" data-move="right">▶</button>
+      <button class="dpad-btn down" data-move="down">▼</button>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" id="navExplore">🏘️ 城鎮</button>
+      <button class="nav-btn" id="navBattle">⚔️ 試煉</button>
+      <button class="nav-btn" id="navReset">♻️ 重開</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'liuguang_ai_magic_v1';
+    const state = {
+      player:{x:3,y:3, lv:1, exp:0, coins:0, certs:0, hp:100, maxHp:100, mp:30, maxMp:30},
+      currentScreen:'explore',
+      quests:{sense:false, link:false, mind:false, teammate:false, boss:false},
+      companions:[],
+      currentQuest:null,
+      battle:null,
+      dialoguesSeen:{},
+      finalCertified:false
+    };
+
+    const mapData = {
+      width:7,height:7,
+      tiles:[]
+    };
+
+    const specialTiles = {
+      '3,3':{name:'中央廣場', icon:'⛲'},
+      '1,1':{name:'感知塔', icon:'🔮', quest:'sense'},
+      '5,1':{name:'聯結驛站', icon:'📡', quest:'link'},
+      '1,5':{name:'智慧書庫', icon:'📚', quest:'mind'},
+      '5,5':{name:'月光酒館', icon:'🍵', quest:'teammate'},
+      '3,0':{name:'試煉之門', icon:'🚪', quest:'boss'}
+    };
+
+    const questMeta = {
+      sense:{ title:'感知魔法修行', icon:'🔮', desc:'學會用感測魔法觀察世界。', speaker:'導師・希菈', portrait:'🔮',
+        intro:'歡迎來到感知塔。AI 魔法的第一步，不是亂丟法術，而是先「看見」世界。你要學會：感測器是把物理世界轉成可讀資料的媒介。',
+        question:'溫室需要持續監測「溫度與濕度」，哪種魔法器具最合適？',
+        options:[
+          {text:'DHT11 溫濕感知水晶', correct:true, explain:'正確！DHT11 可量測溫度與濕度，正是溫室最需要的資訊。'},
+          {text:'超音波測距法杖', correct:false, explain:'這是用來量距離的，不是溫濕度。'},
+          {text:'氣體煙霧魔石', correct:false, explain:'這適合偵測氣體，不是溫濕度。'}
+        ], reward:{exp:18, coins:12, cert:1}
+      },
+      link:{ title:'聯結魔法修行', icon:'📡', desc:'學會讓訊息穿越距離。', speaker:'導師・阿洛', portrait:'📡',
+        intro:'歡迎來到聯結驛站。再厲害的感測也沒用，如果資料送不出去。你要學的，是替不同場景選擇對的通訊方式。',
+        question:'幾公里外的農場，每 10 分鐘只回傳一次溫濕度，設備靠電池運作。最適合哪種通訊魔法？',
+        options:[
+          {text:'LoRa 長距離低耗傳訊', correct:true, explain:'正確！長距離、低資料量、低功耗，就是 LoRa 的舞台。'},
+          {text:'NFC 近身接觸通訊', correct:false, explain:'NFC 距離太短，不適合遠距農場。'},
+          {text:'高畫質 Wi‑Fi 串流', correct:false, explain:'這會太耗電，也超過需求。'}
+        ], reward:{exp:18, coins:12, cert:1}
+      },
+      mind:{ title:'智慧魔法修行', icon:'📚', desc:'學會判斷資料與模式。', speaker:'導師・維恩', portrait:'📚',
+        intro:'歡迎來到智慧書庫。智慧魔法不是神諭，而是從資料中學規律。先學會分辨不同學習方法。',
+        question:'現在有一千筆馬達資料，每筆都標記「正常」或「故障」，想用來判斷新馬達狀態。這屬於哪種學習？',
+        options:[
+          {text:'監督式分類', correct:true, explain:'正確！因為有標籤、要預測類別，這就是監督式分類。'},
+          {text:'非監督式分群', correct:false, explain:'如果沒有標籤才較接近分群。'},
+          {text:'強化學習', correct:false, explain:'這通常用在反覆試錯取得回饋的場景。'}
+        ], reward:{exp:18, coins:12, cert:1}
+      },
+      teammate:{ title:'特殊任務：結交隊友', icon:'🍵', desc:'在酒館協助旅人，邀請隊友加入。', speaker:'旅人・璃亞', portrait:'🧝‍♀️',
+        intro:'你在月光酒館遇見一位旅人。她正在煩惱智慧攝影魔鏡是否會洩露居民隱私。若你幫她解決，她願意成為你的隊友。',
+        question:'若想降低隱私風險，下列哪個作法較適合？',
+        options:[
+          {text:'所有原始影像都上傳雲端，方便就好', correct:false, explain:'方便不代表安全，隱私風險太高。'},
+          {text:'只在邊緣端先處理資料，再上傳必要結果', correct:true, explain:'正確！這符合隱私保護與資料最小化。'},
+          {text:'不設權限，只要有人需要就能看', correct:false, explain:'這會讓系統非常危險。'}
+        ], reward:{exp:12, coins:16, cert:0, companion:'璃亞'}
+      },
+      boss:{ title:'小考試煉：小考魔像', icon:'🗿', desc:'集滿三枚認證碎片後開啟。', speaker:'校長・露米雅', portrait:'🗿',
+        intro:'你已經集滿三枚認證碎片。現在要面對小考魔像。這場戰鬥會把知識變成魔法攻擊。答對施放強力法術，答錯則受到反擊。',
+        reward:{exp:30, coins:30, cert:0}
+      }
+    };
+
+    const bossQuestions = [
+      {
+        q:'Q1. 感測器在 AIoT 系統中的主要角色是什麼？',
+        choices:['把物理世界的資訊轉成可讀資料','自動生成新模型','取代所有網路通訊'],
+        answer:0,
+        spell:'感知光矢',
+        correctText:'你施放【感知光矢】！感測器正是負責把物理量轉成資料。',
+        wrongText:'答錯了。魔像反擊！記住：感測器是物理世界的入口。'
+      },
+      {
+        q:'Q2. 遠距、低資料量、低功耗場景，較適合哪種通訊？',
+        choices:['NFC','LoRa','高頻影像串流 Wi‑Fi'],
+        answer:1,
+        spell:'聯結雷鏈',
+        correctText:'你施放【聯結雷鏈】！LoRa 擊穿魔像護甲。',
+        wrongText:'答錯了。這種情境的關鍵是「長距離 + 低功耗」。'
+      },
+      {
+        q:'Q3. 有標記為正常／故障的資料，用來預測新資料類別，屬於？',
+        choices:['監督式分類','非監督式分群','隨機猜測'],
+        answer:0,
+        spell:'智慧裁決',
+        correctText:'你施放【智慧裁決】！監督式分類命中要害。',
+        wrongText:'答錯了。有標籤時要想到監督式學習。'
+      }
+    ];
+
+    function buildMap(){
+      mapData.tiles = [];
+      for(let y=0;y<mapData.height;y++){
+        for(let x=0;x<mapData.width;x++){
+          let type = (x===3 || y===3 || (y===1 && x>=1 && x<=5) || (y===5 && x>=1 && x<=5)) ? 'path' : ((x===6&&y<3)?'water':(((x+y)%2===0)?'grass':'grass2'));
+          mapData.tiles.push({x,y,type});
+        }
+      }
+    }
+
+    function saveGame(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+    function loadGame(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{
+        const data = JSON.parse(raw);
+        Object.assign(state.player, data.player || {});
+        state.currentScreen = data.currentScreen || 'explore';
+        state.quests = Object.assign(state.quests, data.quests || {});
+        state.companions = data.companions || [];
+        state.finalCertified = !!data.finalCertified;
+      }catch(e){ console.warn(e); }
+    }
+
+    function levelUpCheck(){
+      while(state.player.exp >= state.player.lv*30){
+        state.player.exp -= state.player.lv*30;
+        state.player.lv += 1;
+        state.player.maxHp += 12;
+        state.player.maxMp += 5;
+        state.player.hp = state.player.maxHp;
+        state.player.mp = state.player.maxMp;
+        toast(`升級！你現在是 Lv.${state.player.lv}`);
+      }
+    }
+
+    function updateStats(){
+      document.getElementById('lvText').textContent = 'Lv.' + state.player.lv;
+      document.getElementById('expText').textContent = `${state.player.exp}/${state.player.lv*30}`;
+      document.getElementById('coinText').textContent = state.player.coins;
+      document.getElementById('certText').textContent = `${state.player.certs}/3`;
+      document.getElementById('chapterBadge').textContent = state.finalCertified ? '已認證' : (state.player.certs >= 3 ? '小考前夜' : '修行中');
+      document.getElementById('questCount').textContent = `${Object.values(state.quests).filter(Boolean).length} / 5 完成`;
+      document.getElementById('progressHint').textContent = state.finalCertified ? '恭喜取得初級魔法師認證！' : '完成三個學派試煉後就能挑戰小考 BOSS';
+      renderTeam();
+      renderQuests();
+    }
+
+    function renderMap(){
+      const map = document.getElementById('map');
+      map.innerHTML = '';
+      mapData.tiles.forEach(t=>{
+        const btn = document.createElement('button');
+        btn.className = `tile ${t.type}`;
+        const key = `${t.x},${t.y}`;
+        const sp = specialTiles[key];
+        if(sp){ btn.classList.add('special'); btn.innerHTML = `<span>${sp.icon}</span>`; if(sp.quest && state.quests[sp.quest]) btn.classList.add('done'); }
+        else if(t.type==='grass' || t.type==='grass2'){ btn.innerHTML = ['🌿','🌲','🌼',''][ (t.x+t.y)%4 ]; }
+        else if(t.type==='water'){ btn.innerHTML='~'; }
+        if(state.player.x===t.x && state.player.y===t.y){ btn.innerHTML += `<span class="hero">🧙‍♀️</span>`; }
+        btn.addEventListener('click',()=>{ state.player.x=t.x; state.player.y=t.y; renderMap(); updateLocation(); saveGame(); });
+        map.appendChild(btn);
+      });
+      updateLocation();
+    }
+
+    function updateLocation(){
+      const sp = specialTiles[`${state.player.x},${state.player.y}`];
+      const txt = sp ? `你目前位於「${sp.name}」` : '你站在流光鎮的街道上。';
+      document.getElementById('locationText').textContent = txt;
+    }
+
+    function renderQuests(){
+      const list = document.getElementById('questList');
+      list.innerHTML = '';
+      Object.entries(questMeta).forEach(([key,meta])=>{
+        const div = document.createElement('div');
+        div.className = 'quest';
+        const lockedBoss = key==='boss' && state.player.certs < 3;
+        div.innerHTML = `<div class="icon">${meta.icon}</div><div><div class="name">${meta.title}</div><div class="desc">${lockedBoss ? '需先集滿 3 枚認證碎片' : meta.desc}</div>${state.quests[key] ? '<div class="tag">✅ 已完成</div>' : lockedBoss ? '<div class="tag">🔒 尚未解鎖</div>' : '<div class="tag">📍 可進行</div>'}</div>`;
+        list.appendChild(div);
+      });
+    }
+
+    function renderTeam(){
+      const team = document.getElementById('teamList');
+      const members = [
+        {name:'你', icon:'🧙‍♀️', text:'主角｜AI 魔法見習師'},
+        state.companions.includes('璃亞') ? {name:'璃亞', icon:'🧝‍♀️', text:'隊友｜擅長隱私防護與邊緣處理'} : {name:'???', icon:'❔', text:'完成特殊任務後加入'}
+      ];
+      team.innerHTML = members.map(m=>`<div class="mate"><div style="font-size:22px">${m.icon}</div><div class="name">${m.name}</div><div class="mini">${m.text}</div></div>`).join('');
+    }
+
+    function showDialogue(speaker, text, choices=[]){
+      document.getElementById('speaker').textContent = speaker;
+      document.getElementById('dialogue').textContent = text;
+      const c = document.getElementById('choices');
+      c.innerHTML = '';
+      choices.forEach(ch=>{
+        const btn = document.createElement('button');
+        btn.className = 'action';
+        btn.textContent = ch.label;
+        btn.addEventListener('click', ch.onClick);
+        c.appendChild(btn);
+      });
+    }
+
+    function interact(){
+      const sp = specialTiles[`${state.player.x},${state.player.y}`];
+      if(!sp){
+        showDialogue('流光鎮', '這裡沒有特別事件。你可以前往有圖示的建築學習魔法，或去試煉之門挑戰小考。', [
+          {label:'知道了', onClick:()=>defaultDialogue()}
+        ]);
+        return;
+      }
+      const key = sp.quest;
+      if(key === 'boss' && state.player.certs < 3){
+        showDialogue('試煉之門', '門上的魔法紋路尚未完整亮起。你需要先完成三個學派的修行，集滿 3 枚認證碎片。', [
+          {label:'返回', onClick:()=>defaultDialogue()}
+        ]);
+        return;
+      }
+      startQuest(key);
+    }
+
+    function startQuest(key){
+      state.currentQuest = key;
+      const q = questMeta[key];
+      if(state.quests[key] && key!=='boss'){
+        const choices=[{label:'複習這個知識點', onClick:()=>askQuestion(key)},{label:'返回', onClick:()=>defaultDialogue()}];
+        showDialogue(q.speaker, `你已經完成「${q.title}」。\n複習重點：${q.intro}`, choices);
+        return;
+      }
+      if(key==='boss'){
+        showDialogue(q.speaker, q.intro, [
+          {label:'進入小考戰鬥', onClick:()=>initBattle()},
+          {label:'稍後再來', onClick:()=>defaultDialogue()}
+        ]);
+        return;
+      }
+      showDialogue(q.speaker, q.intro, [
+        {label:'開始修行', onClick:()=>askQuestion(key)},
+        {label:'稍後再來', onClick:()=>defaultDialogue()}
+      ]);
+    }
+
+    function askQuestion(key){
+      const q = questMeta[key];
+      showDialogue(q.speaker, q.question, q.options.map(opt=>({
+        label:opt.text,
+        onClick:()=>resolveQuestAnswer(key,opt)
+      })));
+    }
+
+    function resolveQuestAnswer(key,opt){
+      const q = questMeta[key];
+      if(opt.correct){
+        let rewardText = opt.explain + `\n\n獲得 EXP +${q.reward.exp}、魔晶 +${q.reward.coins}`;
+        if(q.reward.cert){ rewardText += `、認證碎片 +${q.reward.cert}`; }
+        if(q.reward.companion){ rewardText += `\n\n✨ 特殊任務成功！新隊友「${q.reward.companion}」加入。`; }
+        if(!state.quests[key]){
+          state.quests[key] = true;
+          state.player.exp += q.reward.exp;
+          state.player.coins += q.reward.coins;
+          state.player.certs += q.reward.cert || 0;
+          if(q.reward.companion && !state.companions.includes(q.reward.companion)) state.companions.push(q.reward.companion);
+          levelUpCheck();
+          saveGame();
+          updateStats();
+          renderMap();
+        }
+        showDialogue(q.speaker, rewardText, [{label:'繼續冒險', onClick:()=>defaultDialogue()}]);
+      }else{
+        showDialogue(q.speaker, opt.explain + '\n\n再試一次吧，魔法學習本來就要慢慢校正。', [
+          {label:'再試一次', onClick:()=>askQuestion(key)},
+          {label:'先離開', onClick:()=>defaultDialogue()}
+        ]);
+      }
+    }
+
+    function initBattle(){
+      state.currentScreen='battle';
+      switchScreen('battle');
+      state.battle = {
+        enemy:{name:'小考魔像', hp:100, maxHp:100, sprite:'🗿'},
+        qIndex:0,
+        activeQuestion:null,
+        waitingChoice:false,
+        over:false
+      };
+      state.player.hp = state.player.maxHp;
+      state.player.mp = state.player.maxMp;
+      renderBattle();
+      setBattleLog('戰鬥開始！\n小考魔像：若你真的學會三系魔法，就用知識來擊敗我吧。');
+    }
+
+    function renderBattle(){
+      const b = state.battle;
+      if(!b) return;
+      document.getElementById('enemyName').textContent = b.enemy.name;
+      document.getElementById('enemySprite').textContent = b.enemy.sprite;
+      document.getElementById('enemyHpBar').style.width = `${(b.enemy.hp/b.enemy.maxHp)*100}%`;
+      document.getElementById('enemyHpText').textContent = `HP ${Math.max(0,b.enemy.hp)} / ${b.enemy.maxHp}`;
+      document.getElementById('playerHpBar').style.width = `${(state.player.hp/state.player.maxHp)*100}%`;
+      document.getElementById('playerHpText').textContent = `HP ${Math.max(0,state.player.hp)} / ${state.player.maxHp}`;
+      document.getElementById('playerMpBar').style.width = `${(state.player.mp/state.player.maxMp)*100}%`;
+      document.getElementById('playerMpText').textContent = `MP ${Math.max(0,state.player.mp)} / ${state.player.maxMp}`;
+      document.getElementById('battleTurn').textContent = b.waitingChoice ? '選擇答案' : '你的回合';
+      const spellList = document.getElementById('spellList');
+      spellList.innerHTML = '';
+      if(b.activeQuestion && b.waitingChoice){
+        b.activeQuestion.choices.forEach((choice,idx)=>{
+          const btn = document.createElement('button');
+          btn.className='spell';
+          btn.innerHTML = `${String.fromCharCode(65+idx)}. ${choice}<small>${b.activeQuestion.q}</small>`;
+          btn.addEventListener('click',()=>answerBattle(idx));
+          spellList.appendChild(btn);
+        });
+      }else{
+        const btn = document.createElement('button');
+        btn.className='spell';
+        btn.innerHTML = `📖 讀取小考題目<small>答對即可施法，答錯會被反擊。</small>`;
+        btn.addEventListener('click', nextBattleQuestion);
+        spellList.appendChild(btn);
+      }
+    }
+
+    function setBattleLog(txt){ document.getElementById('battleLog').textContent = txt; }
+
+    function nextBattleQuestion(){
+      const b = state.battle;
+      if(!b || b.over) return;
+      if(b.qIndex >= bossQuestions.length){
+        finishBattle(true); return;
+      }
+      b.activeQuestion = bossQuestions[b.qIndex];
+      b.waitingChoice = true;
+      setBattleLog(`小考魔像提出問題！\n\n${b.activeQuestion.q}\n\n請選擇正確答案。`);
+      renderBattle();
+    }
+
+    function answerBattle(idx){
+      const b = state.battle;
+      if(!b || !b.activeQuestion) return;
+      const q = b.activeQuestion;
+      if(idx === q.answer){
+        const damage = 34;
+        b.enemy.hp -= damage;
+        state.player.mp = Math.max(0, state.player.mp - 6);
+        let log = `${q.correctText}\n對小考魔像造成 ${damage} 點傷害！`;
+        if(state.companions.includes('璃亞')){ log += `\n隊友璃亞發動【護紋支援】，幫你穩定魔力流。`; }
+        b.qIndex += 1;
+        b.activeQuestion = null;
+        b.waitingChoice = false;
+        if(b.enemy.hp <= 0){ setBattleLog(log + '\n\n小考魔像崩解了！'); finishBattle(true); }
+        else { setBattleLog(log + '\n\n你成功撐住了這一回合。'); renderBattle(); }
+      }else{
+        const damage = 16;
+        state.player.hp -= damage;
+        b.waitingChoice = false;
+        const log = `${q.wrongText}\n你受到 ${damage} 點傷害。`;
+        if(state.player.hp <= 0){ setBattleLog(log + '\n\n你倒下了……但校長允許你重新挑戰。'); finishBattle(false); }
+        else { setBattleLog(log + '\n\n整理思緒後，再讀一次題目吧。'); renderBattle(); }
+      }
+      saveGame();
+    }
+
+    function finishBattle(win){
+      const b = state.battle;
+      if(!b) return;
+      b.over = true;
+      if(win){
+        if(!state.quests.boss){
+          state.quests.boss = true;
+          state.player.exp += questMeta.boss.reward.exp;
+          state.player.coins += questMeta.boss.reward.coins;
+          levelUpCheck();
+          state.finalCertified = true;
+          saveGame();
+          updateStats();
+        }
+        setBattleLog((document.getElementById('battleLog').textContent || '') + '\n\n🏆 恭喜你通過小考，取得「初級魔法師認證」！');
+      }else{
+        setBattleLog((document.getElementById('battleLog').textContent || '') + '\n\n下次再來，知識會讓你變強。');
+      }
+      renderBattle();
+    }
+
+    function switchScreen(name){
+      state.currentScreen = name;
+      document.getElementById('screenExplore').classList.toggle('hidden', name!=='explore');
+      document.getElementById('screenBattle').classList.toggle('hidden', name!=='battle');
+      document.getElementById('controls').classList.toggle('hidden', name!=='explore');
+      saveGame();
+    }
+
+    function defaultDialogue(){
+      let text = '歡迎你，AI 魔法見習師。你要在流光鎮學會三系魔法：感知、聯結、智慧。每學成一系，便會取得一枚認證碎片。集滿後，你就能挑戰「小考魔像」，取得初級魔法師認證。';
+      if(state.finalCertified){
+        text = '你已取得初級魔法師認證！現在這座流光鎮已把你視為真正的冒險者。你可以繼續複習各學派，或等待下一章更新。';
+      }
+      showDialogue('校長・露米雅', text, [
+        {label:'查看下一步', onClick:()=>{
+          if(state.player.certs>=3 && !state.quests.boss){ showDialogue('校長・露米雅','你已經集滿 3 枚認證碎片，可以前往「試煉之門」挑戰小考魔像。',[{label:'知道了', onClick:()=>defaultDialogue()}]); }
+          else { showDialogue('校長・露米雅','先前往感知塔、聯結驛站、智慧書庫修行，再去月光酒館結交隊友。',[{label:'知道了', onClick:()=>defaultDialogue()}]); }
+        }}
+      ]);
+    }
+
+    function move(dx,dy){
+      state.player.x = Math.max(0, Math.min(mapData.width-1, state.player.x+dx));
+      state.player.y = Math.max(0, Math.min(mapData.height-1, state.player.y+dy));
+      renderMap(); saveGame();
+    }
+
+    function toast(text){
+      const t = document.getElementById('toast');
+      t.textContent = text;
+      t.style.display='block';
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(()=> t.style.display='none', 1800);
+    }
+
+    function installHint(){
+      const note = document.getElementById('installNote');
+      note.classList.remove('hidden');
+    }
+
+    document.querySelectorAll('[data-move]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const dir = btn.getAttribute('data-move');
+        const d = {up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[dir];
+        move(d[0],d[1]);
+      });
+    });
+    document.getElementById('interactBtn').addEventListener('click', interact);
+    document.getElementById('navExplore').addEventListener('click', ()=>switchScreen('explore'));
+    document.getElementById('navBattle').addEventListener('click', ()=>{
+      if(state.player.certs<3 && !state.quests.boss){ toast('先完成三個學派修行，才能挑戰小考。'); return; }
+      if(!state.quests.boss) initBattle(); else switchScreen('battle');
+    });
+    document.getElementById('navReset').addEventListener('click', ()=>{
+      if(confirm('確定要重開遊戲嗎？本機進度會清除。')){
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    });
+    document.getElementById('battleBackBtn').addEventListener('click', ()=>switchScreen('explore'));
+    document.getElementById('battleNextBtn').addEventListener('click', nextBattleQuestion);
+
+    window.addEventListener('keydown', e=>{
+      if(state.currentScreen!=='explore') return;
+      if(e.key==='ArrowUp') move(0,-1);
+      if(e.key==='ArrowDown') move(0,1);
+      if(e.key==='ArrowLeft') move(-1,0);
+      if(e.key==='ArrowRight') move(1,0);
+      if(e.key==='Enter' || e.key===' ') interact();
+    });
+
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+    if(/iphone|android|ipad/i.test(navigator.userAgent)) installHint();
+
+    buildMap();
+    loadGame();
+    updateStats();
+    renderMap();
+    switchScreen(state.currentScreen || 'explore');
+    defaultDialogue();
+  </script>
+</body>
+</html>

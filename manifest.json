@@ -1,0 +1,16 @@
+{
+  "name": "流光鎮物語：AI 魔法見習師",
+  "short_name": "AI魔法見習師",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1d1731",
+  "theme_color": "#4d3b7a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
